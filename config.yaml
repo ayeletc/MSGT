@@ -13,7 +13,7 @@ plot_status_DD: false
 sample_method: 'GE'
 N: 500
 vecK: [3]
-nmc: 10
+nmc: 10000
 enlarge_tests_num_by_factors: [0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2]
 
 # Encoder
@@ -24,9 +24,7 @@ do_third_step: true
 third_step_type: 'viterbi+MAP' # options: ['MLE', 'MAP_for_GE', 'viterbi', 'viterbi+MAP']
 
 # Viterbi decoder 
-init_paths_number: 500
-max_paths_for_lva: 500
-step_in_lva_paths: 500
+num_of_paths_for_lva: 500
 viterbi_time_steps: 1
 max_iteration_for_map: 1000000
 gamma_dict:

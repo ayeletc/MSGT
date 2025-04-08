@@ -71,7 +71,7 @@ def compute_HammingDistance(X):
     return (X[:, None, :] != X).sum(2)
 
 dont_include_variables = ['np', 'scipy', 'scipy.io', 'numpy', 'pd', 'matplotlib', 'zipfile', \
-                        'time', 'tqdm', 'math', 'itertools', 'random', 'go', 'px', \
+                        'yaml', 'time', 'tqdm', 'math', 'itertools', 'random', 'go', 'px', \
                         'datetime', 'os', 'plt', 'binomial', 'shelve', 'reverse', 'bisect', \
                         'plot_DD_vs_K_and_T', 'plot_expected_DD', 'plot_expected_PD', 'plot_expected_unknown', \
                         'plot_expected_not_detected', 'plot_expected_unknown_avg', 'plot_Psuccess_vs_T', 'plot_and_save', \

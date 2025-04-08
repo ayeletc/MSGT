@@ -78,7 +78,7 @@ def plot_DD_exact_Ps_vs_min_and_avg_hamming_dist(N, K, T, test_factor, count_suc
     axs[1].set_ylabel('success')
     plt.show()
 
-def plot_DD_vs_K_and_T(N, vecT, vecK, count_PD1, enlarge_tests_num_by_factors, nmc, count_DD2, sample_method, Tbaseline, typical_codes, results_dir_path=None):
+def plot_DD_vs_K_and_T(N, vecT, vecK, count_PD1, enlarge_tests_num_by_factors, nmc, count_DD2, sample_method, Tbaseline, results_dir_path=None):
     fig = go.Figure()
     for idxT, T in enumerate(vecT):
         fig.add_trace(go.Scatter(x=vecK, y=count_DD2[:,idxT], 
@@ -103,13 +103,9 @@ def plot_DD_vs_K_and_T(N, vecT, vecK, count_PD1, enlarge_tests_num_by_factors, n
                             marker_line_color="white", marker_color="white",
                             name='K'))
 
-    typical_label = 'no typical codes'
-    if typical_codes:
-        typical_label = 'typical codes'
-
     fig.update_layout(title= sample_method + '<br>DD vs. K after CoMa and DD <br>\
                             N = ' + str(N) + ', T=T_{' + Tbaseline + '}*[' + str(enlarge_tests_num_by_factors) + '] <br>\
-                            ' + typical_label + ', iterations=' + str(nmc),
+                            ' + ', iterations=' + str(nmc),
                         xaxis_title='K',
                         yaxis_title='#DD',
                         hovermode="x",
@@ -269,7 +265,7 @@ def plot_expected_unknown_avg(vecK, expected_unknown, real_unknown, vecT, enlarg
     plot_and_save(fig, fig_name='expected_unknown_average', results_dir_path=results_dir_path)
 
 def plot_Psuccess_vs_T(vecTs, count_success_DD, count_success_Tot, vecK, N, nmc, third_step_label, sample_method, Tbaseline, 
-                        enlarge_tests_num_by_factors, typical_label, delta_typical_cols, results_dir_path, exact=True):
+                        enlarge_tests_num_by_factors, results_dir_path, exact=True):
     if exact:
         comment = 'exact analysis'
     else:
@@ -294,9 +290,7 @@ def plot_Psuccess_vs_T(vecTs, count_success_DD, count_success_Tot, vecK, N, nmc,
                                 hovertemplate='%{y:.3f}',
                                 name='Psuccess Tot, K=' + str(K)))
 
-    typical_label = typical_label[1:] + ' delta_cols = ' + str(delta_typical_cols)
-    fig.update_layout(title= 'Third step: ' + third_step_label + ' || ' + sample_method + + ' || ' \
-                            + typical_label +
+    fig.update_layout(title= 'Third step: ' + third_step_label + ' || ' + sample_method + ' || ' + \
                             '<br> Probability of success vs. T  || ' + comment + '<br>\
                             N = ' + str(N) + \
                             ' || K = ' + str(vecK) + \
@@ -330,5 +324,5 @@ if __name__ == '__main__':
     var_dict = load_workspace(db_path)
     for key in var_dict.keys():
         globals()[key] = var_dict[key]
-    plot_DD_vs_K_and_T(N, vecT, vecK, count_PD1, enlarge_tests_num_by_factors, nmc, count_DD2, sample_method, Tbaseline, typical_codes)
+    plot_DD_vs_K_and_T(N, vecT, vecK, count_PD1, enlarge_tests_num_by_factors, nmc, count_DD2, sample_method, Tbaseline)
     

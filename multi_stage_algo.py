@@ -34,7 +34,8 @@ if do_third_step:
 else:
     print('===== Stop after DD ====')
 if third_step_type == 'viterbi+MAP':
-    print('===== max paths in lva = {}  <=>  max lva iterations = {} ====='.format(max_paths_for_lva, int((max_paths_for_lva-init_paths_number)/step_in_lva_paths)+1))
+    # print('===== max paths in lva = {}  <=>  max lva iterations = {} ====='.format(max_paths_for_lva, int((max_paths_for_lva-init_paths_number)/step_in_lva_paths)+1))
+    print('===== max paths in lva = {} ====='.format(num_of_paths_for_lva))
     print('===== viterbi time steps = {} ====='.format(viterbi_time_steps))
     
 ## Initialize counters
@@ -212,70 +213,70 @@ for idxK in range(numOfK):
                 skip_viterbi_paths_options = False
                 if debug_mode:
                     print('start lva')
-                top_k = init_paths_number
-                while not possible_combination_found and top_k <= max_paths_for_lva:
-                    if viterbi_time_steps == 1:
-                        if sample_method == 'GE':
-                            hmm_model = ge_model.model_as_hmm(K, T, len(PD1), p, ver_states=False)
-                            path_trajs, path_probs, ml_prob, ml_traj = hmm_model.list_viterbi_algo_parallel_with_deter(observations, top_k=top_k)
-                        elif sample_method == 'Markov':
-                            # hmm_model_1step_memory = markov_model.model_as_hmm_with_1step_memory()
-                            hmm_model = markov_model.model_as_hmm_with_1step_memory()
-                            path_trajs, path_probs, ml_prob, ml_traj = hmm_model.list_viterbi_algo_parallel_with_deter(observations, top_k=top_k)
-                        else: 
-                            print('Not defined yet')# remove dup rows
-                        unique_rows = np.unique(path_trajs, axis=0)
-                        paths = unique_rows
-                        if debug_mode:
-                            print(paths.shape[0], ' unique paths')
-                    else:
-                        if sample_method == 'GE':
-                            hmm_model = ge_model.model_as_hmm_with_long_memory(K,T,len(PD1), p, ts=viterbi_time_steps)
-                        elif sample_method == 'Markov':
-                            hmm_model = markov_model.model_as_hmm()
-                        path_trajs2, path_probs2, ml_prob2, ml_traj2 = hmm_model_2steps_2.list_viterbi_algo_parallel_with_long_memory(observations, top_k=top_k)
-                        paths = np.copy(path_trajs2)
-                        
-                        # remove dup rows
-                        unique_rows = np.unique(paths, axis=0)
-                        if debug_mode and unique_rows.shape[0] != paths.shape[0]:
-                            print('check')
-                        paths = unique_rows
+                # top_k = init_paths_number
+                # while not possible_combination_found and top_k <= max_paths_for_lva:
+                if viterbi_time_steps == 1:
+                    if sample_method == 'GE':
+                        hmm_model = ge_model.model_as_hmm(K, T, len(PD1), p, ver_states=False)
+                        path_trajs, path_probs, ml_prob, ml_traj = hmm_model.list_viterbi_algo_parallel_with_deter(observations, top_k=num_of_paths_for_lva)
+                    elif sample_method == 'Markov':
+                        # hmm_model_1step_memory = markov_model.model_as_hmm_with_1step_memory()
+                        hmm_model = markov_model.model_as_hmm_with_1step_memory()
+                        path_trajs, path_probs, ml_prob, ml_traj = hmm_model.list_viterbi_algo_parallel_with_deter(observations, top_k=num_of_paths_for_lva)
+                    else: 
+                        print('Not defined yet')# remove dup rows
+                    unique_rows = np.unique(path_trajs, axis=0)
+                    paths = unique_rows
+                    if debug_mode:
+                        print(paths.shape[0], ' unique paths')
+                else:
+                    if sample_method == 'GE':
+                        hmm_model = ge_model.model_as_hmm_with_long_memory(K,T,len(PD1), p, ts=viterbi_time_steps)
+                    elif sample_method == 'Markov':
+                        hmm_model = markov_model.model_as_hmm()
+                    path_trajs2, path_probs2, ml_prob2, ml_traj2 = hmm_model_2steps_2.list_viterbi_algo_parallel_with_long_memory(observations, top_k=num_of_paths_for_lva)
+                    paths = np.copy(path_trajs2)
                     
-                    count_detections_for_non_exact_recovery = []
+                    # remove dup rows
+                    unique_rows = np.unique(paths, axis=0)
+                    if debug_mode and unique_rows.shape[0] != paths.shape[0]:
+                        print('check')
+                    paths = unique_rows
+                
+                count_detections_for_non_exact_recovery = []
+                
+                # prepare k-defective optional sets
+                optional_sets_list = []
+                for ii in range(paths.shape[0]):
+                    detected_defective_set = np.where(paths[ii]==1)[0]
+                    if detected_defective_set.shape[0] >= gamma_dict[str(enlarge_tests_num_by_factors[idxT])]:#N*0.9:
+                        # Too many potential combinations, skip the viterbi option
+                        skip_viterbi_paths_options = True
+                        continue
                     
-                    # prepare k-defective optional sets
-                    optional_sets_list = []
-                    for ii in range(paths.shape[0]):
-                        detected_defective_set = np.where(paths[ii]==1)[0]
-                        if detected_defective_set.shape[0] >= gamma_dict[str(enlarge_tests_num_by_factors[idxT])]:#N*0.9:
-                            # Too many potential combinations, skip the viterbi option
-                            skip_viterbi_paths_options = True
-                            continue
+                    elif detected_defective_set.shape[0] >= K:
+                        # reasonable number of combinations, find the options
+                        detected_defective_set_minus_DD = [e for e in detected_defective_set if e not in DD2] 
+                        possible_kleft_combinations = prepare_nchoosek_comb(detected_defective_set_minus_DD, K-len(DD2))
+                        possible_k_combinations = []
+                        for c in possible_kleft_combinations:
+                            c = (list(c) + DD2)
+                            possible_k_combinations.append(c)
                         
-                        elif detected_defective_set.shape[0] >= K:
-                            # reasonable number of combinations, find the options
-                            detected_defective_set_minus_DD = [e for e in detected_defective_set if e not in DD2] 
-                            possible_kleft_combinations = prepare_nchoosek_comb(detected_defective_set_minus_DD, K-len(DD2))
-                            possible_k_combinations = []
-                            for c in possible_kleft_combinations:
-                                c = (list(c) + DD2)
-                                possible_k_combinations.append(c)
-                            
-                            for comb in possible_k_combinations:
-                                list_of_false_positive_items = [item for item in detected_defective_set if (item not in unknown2) and (item not in DD2)]
-                                if (not DD2 or len(list(set(DD2) - set(comb))) == 0) and not list_of_false_positive_items: # the comc include all the DD2 and does not include dnd1
-                                    optional_sets_list.append(list(comb))
-                        else: # no path with as least K defectives:
-                            pass
-                            
-                            if len(count_detections_for_non_exact_recovery) <= len(detected_defective_set):
-                                count_detections_for_non_exact_recovery = list(detected_defective_set)
+                        for comb in possible_k_combinations:
+                            list_of_false_positive_items = [item for item in detected_defective_set if (item not in unknown2) and (item not in DD2)]
+                            if (not DD2 or len(list(set(DD2) - set(comb))) == 0) and not list_of_false_positive_items: # the comc include all the DD2 and does not include dnd1
+                                optional_sets_list.append(list(comb))
+                    else: # no path with as least K defectives:
+                        pass
+                        
+                        if len(count_detections_for_non_exact_recovery) <= len(detected_defective_set):
+                            count_detections_for_non_exact_recovery = list(detected_defective_set)
 
-                    if optional_sets_list: 
-                        possible_combination_found = True
-                    else:
-                        top_k += step_in_lva_paths
+                if optional_sets_list: 
+                    possible_combination_found = True
+                # else:
+                #     top_k += step_in_lva_paths
                 
                 if possible_combination_found:
                     # keep only unique combinations, remove dups
@@ -284,7 +285,7 @@ for idxK in range(numOfK):
                     viterbi_fail_try_full_map = False 
                     # num_comb_after_lva[idxK, idxT,nn]
                 
-                elif top_k > max_paths_for_lva:
+                else:
                     # didn't find valid options using viterbi
                     # check if going over all the options is possible:
                     num_of_true_set_options_in_step3 = int(scipy.special.comb(len(unknown2), K-len(DD2)))
@@ -296,8 +297,6 @@ for idxK in range(numOfK):
                     num_of_correct_detection = K-len(not_detected)
                     count_success_non_exact_third_step[idxK, idxT, nn] += (num_of_correct_detection-len(DD2))/K 
                     continue
-                else:
-                    pass
 
                 if debug_mode:
                     print('start map, #options=', optional_sets_ar.shape[0])
@@ -435,7 +434,7 @@ if not do_third_step:
 
 viterbi_label = ''
 if third_step_label == 'viterbi+MAP':
-    viterbi_label =  '_max_paths_for_lva' + str(max_paths_for_lva) 
+    viterbi_label =  '_num_of_paths_for_lva' + str(num_of_paths_for_lva) 
     viterbi_label = viterbi_label + '_' + str(viterbi_time_steps) + 'steps'
 
 if save_fig or save_raw:    
