@@ -16,13 +16,13 @@ import scipy.io
 # pid = os.getpid()
 # os.system('sudo renice -n -20 -p ' + str(pid))
 #%% Config simulation
-N                   = 500 
+N                   = 500
 vecK                = [3]
-nmc                 = 5
+nmc                 = 10
 enlarge_tests_num_by_factors = [0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2] #[0.25, 0.5, 0.75, 1, 1.25] #[0.5, 0.25, 0.5, 0.75, 1, 1.5]#[0.75, 0.8, 0.9, 1, 1.25, 1.5, 1.75, 2]# [0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.3, 1.7, 2] #[0.85, 0.9, 0.95, 1, 1.25, 1.5, 1.75, 2]#
-Tbaseline           = 'ML' # options: 'ML', 'lb_no_priors', 'lb_with_priors', 'GE'
+Tbaseline           = 'GE' # options: 'ML', 'lb_no_priors', 'GE'
 third_step_type     = 'viterbi+MAP' # options: ['MLE', 'MAP_for_GE', 'viterbi', 'viterbi+MAP']
-save_raw            = True
+save_raw            = False
 save_fig            = False
 save_path           = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'results')
 is_plot             = False
@@ -33,7 +33,7 @@ debug_mode          = False
 plot_status_DD      = False
 
 ### probabilistic model config ###
-sample_method       = 'Markov'  # options: 'onlyPu', 'indicative'
+sample_method       = 'GE'  # options: 'onlyPu', 'indicative'
 
 ### code config ###
 code_type           = 'near_constant' # options: 'bernoulli', 'typical_bernoulli', 'near_constant'
@@ -112,8 +112,8 @@ for idxK in range(numOfK):
                 _, markov_model = sample_population_for_N10000_K13_ts3(N, K, markov_model)
             else:
                 print('Sampling method is not defined for the given N,K')
-    vecT = calculate_vecT_for_K(K, N, enlarge_tests_num_by_factors, Tbaseline=Tbaseline, Pe=Pe, 
-                sample_method=sample_method, ge_model=ge_model, Pu=None, coeff_mat=None)
+    vecT = calculate_vecT_for_K(K, N, enlarge_tests_num_by_factors, Tbaseline=Tbaseline,
+                ge_model=ge_model)
     vecTs.append(vecT)
     time_start = time.time()
     for idxT in range(num_of_test_scale):
@@ -370,7 +370,7 @@ for idxK in range(numOfK):
                             print('Yw!=Y')
                         continue
                     if sample_method == 'GE':
-                        Pw_map = ge_model.calc_Pw_fixed(N, comb, DD2, DND1)
+                        Pw_map = ge_model.calc_Pw(N, comb, DD2, DND1)
                     elif sample_method == 'Markov':
                         Pw_map = markov_model.calc_Pw(N, comb, DD2, DND1)
                     P_X_Sw = p ** np.sum(X_forW == 1)
@@ -402,7 +402,7 @@ for idxK in range(numOfK):
                             print('Yw!=Y')
                         continue
                     
-                    Pw = ge_model.calc_Pw_fixed(N, permute, DD2, DND1)
+                    Pw = ge_model.calc_Pw(N, permute, DD2, DND1)
                     P_X_Sw = p ** np.sum(X_forW == 1)
                     apriori[comb] = Pw * P_X_Sw
                     if set(permute+DD2) == set(true_defective_set) and debug_mode:

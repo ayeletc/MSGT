@@ -24,6 +24,12 @@ def single_map(comb, N, DND1, DD2, X, Y, p, ge_model):
 def single_map_test(comb):
     return np.sum(comb)
 
+def bitlist2int(bits_list):
+    integer = 0
+    for bit in bits_list:
+        integer = (integer << 1) | bit
+    return integer
+
 def rand_array_fixed_sum(n1,n2, fixed_sum):
     if 'fixed_sum' not in locals():
         fixed_sum = 1
