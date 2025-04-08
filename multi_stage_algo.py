@@ -11,54 +11,19 @@ from plotters import *
 from calc_bounds_and_num_of_tests import *
 from Markov_model import *
 import scipy.io
+import yaml
 
 
-# pid = os.getpid()
-# os.system('sudo renice -n -20 -p ' + str(pid))
-#%% Config simulation
-N                   = 500
-vecK                = [3]
-nmc                 = 10
-enlarge_tests_num_by_factors = [0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2] #[0.25, 0.5, 0.75, 1, 1.25] #[0.5, 0.25, 0.5, 0.75, 1, 1.5]#[0.75, 0.8, 0.9, 1, 1.25, 1.5, 1.75, 2]# [0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.3, 1.7, 2] #[0.85, 0.9, 0.95, 1, 1.25, 1.5, 1.75, 2]#
-Tbaseline           = 'GE' # options: 'ML', 'lb_no_priors', 'GE'
-third_step_type     = 'viterbi+MAP' # options: ['MLE', 'MAP_for_GE', 'viterbi', 'viterbi+MAP']
-save_raw            = False
-save_fig            = False
-save_path           = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'results')
-is_plot             = False
-do_third_step       = True
-is_sort_comb_by_priors = True
-add_dd_based_prior  = False
-debug_mode          = False 
-plot_status_DD      = False
+# Convert config yaml to variables
+with open("config.yaml", "r") as file:
+    config = yaml.safe_load(file)
 
-### probabilistic model config ###
-sample_method       = 'GE'  # options: 'onlyPu', 'indicative'
+globals().update(config)
+save_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'results')
 
-### code config ###
-code_type           = 'near_constant' # options: 'bernoulli', 'typical_bernoulli', 'near_constant'
-delta_typical_cols  = 0.1 
-delta_typical_rows  = 0.1
+random.seed(random_seed)
+np.random.seed(numpy_seed)
 
-### viterbi config ###
-init_paths_number    = 500
-max_paths_for_lva    = 500
-step_in_lva_paths    = 500
-viterbi_time_steps   = 1 #1/2/3
-max_iteration_for_map = 1e6
-gamma_dict = {'0.5': 12,
-              '0.6': 6,
-              '0.7': 6,
-              '0.8': 6,
-              '0.9': 6,
-              '1.0': 6,
-              '1.1': 6,
-              '1.2': 6,
-              }
-
-### seed ###
-random.seed(123)
-np.random.seed(123)
 
 invalid = -1
 all_permutations = []
@@ -71,6 +36,7 @@ else:
 if third_step_type == 'viterbi+MAP':
     print('===== max paths in lva = {}  <=>  max lva iterations = {} ====='.format(max_paths_for_lva, int((max_paths_for_lva-init_paths_number)/step_in_lva_paths)+1))
     print('===== viterbi time steps = {} ====='.format(viterbi_time_steps))
+    
 ## Initialize counters
 numOfK = len(vecK)
 viterbi_fail_try_full_map = False
@@ -119,12 +85,12 @@ for idxK in range(numOfK):
     for idxT in range(num_of_test_scale):
         T = np.int16(vecT[idxT])
         print('T = {} || factor = {}'.format(T, enlarge_tests_num_by_factors[idxT]))
-        overflow_const = 1 #10^T
+        overflow_const = 1 
 
         p = 1-2**(-1/K) # options: 1/K, log(2)/K, 1-2**(-1/K)
         expected_PD[idxK, idxT] = K + (N-K) * (1-p*(1-p)**K)**T 
         nPD = expected_PD[idxK, idxT]
-        expected_DD[idxK, idxT]  = K*(1-(1-p*(1-p)**(nPD-1))**T)#nPD*p_defective*(1-(1-p*(1-p)**(nPD-1))**T) # version1 - p_defective appears once
+        expected_DD[idxK, idxT]  = K*(1-(1-p*(1-p)**(nPD-1))**T)#nPD*p_defective*(1-(1-p*(1-p)**(nPD-1))**T) 
         expected_notDetected[idxK, idxT] = K - expected_DD[idxK, idxT]
 
         alpha = 1.4 * enlarge_tests_num_by_factors[idxT]
@@ -159,26 +125,6 @@ for idxK in range(numOfK):
             # Encoder - bernoulli 
             if 'bernoulli' in code_type:
                 X =  np.multiply(np.random.uniform(0,1,(T, N)) < p,1) # iid testing matrix
-            
-            if code_type == 'typical_bernoulli':
-                all_X_typical = False
-                while not all_X_typical:
-                    non_typical_cols = set(np.arange(N))
-                    while non_typical_cols:
-                        non_typical_cols_list = list(non_typical_cols)
-                        X[:,non_typical_cols_list] = np.multiply(np.random.uniform(0,1,(T, len(non_typical_cols))) < p,1)
-                        sum_cols = np.sum(X[:,non_typical_cols_list], axis=0)
-                        dist_cols = np.abs(sum_cols / T - p)
-                        typical_cols = np.array(non_typical_cols_list)[np.where(dist_cols < delta_typical_cols)[0]]
-                        non_typical_cols = non_typical_cols.difference(set(typical_cols))
-                        
-                    # verify that the rows are also typical 
-                    sum_rows = np.sum(X, axis=1)
-                    dist_rows = np.abs(sum_rows / N - p)
-                    non_typical_row = [r for r in dist_rows if r > delta_typical_rows]
-                    all_X_typical = len(non_typical_row) == 0
-
-                non_typical_cols = list(non_typical_cols)
 
             elif code_type == 'near_constant':
                 X = np.zeros((T, N)).astype(np.uint8)
@@ -375,8 +321,6 @@ for idxK in range(numOfK):
                         Pw_map = markov_model.calc_Pw(N, comb, DD2, DND1)
                     P_X_Sw = p ** np.sum(X_forW == 1)
                     apriori[comb_idx] = Pw_map * P_X_Sw
-                # elapsed_iter_map = time.time() - t_iter_map
-                # print('elapsed time in iterative MAP: {} [sec]'.format(elapsed_iter_map))
                 
                 max_likelihood_W = np.argmax(apriori)
                 estU = np.zeros(U.shape)
@@ -422,7 +366,7 @@ for idxK in range(numOfK):
                 except:
                     print('could not find permutations')
                     continue
-                # we want to find estW: estW = argmax{P(Y|W)}
+                # find estW: estW = argmax{P(Y|W)}
                 max_likelihood_W = None
                 min_error_counter = np.inf
                 # try each permutation w: 
@@ -446,8 +390,6 @@ for idxK in range(numOfK):
             if np.sum(U != estU) == 0:
                 count_success_exact_third_step[idxK, idxT, nn] += 1
                 count_success_non_exact_third_step[idxK, idxT, nn] += (K-len(DD2))/K
-                if viterbi_fail_try_full_map:
-                    print('here')
             else:
                 # count only the items detected in the 3rd step 
                 detected_defectives = np.where(estU==1)[1] # may be errornous detection
@@ -459,7 +401,6 @@ for idxK in range(numOfK):
     print('It took {:.3f}[min]'.format(elapsed/60))
     
 # Normalize success and counters
-
 count_success_DD_exact = np.sum(count_success_DD_exact, axis=2) * 100/nmc
 count_success_exact_third_step = np.sum(count_success_exact_third_step, axis=2) * 100/nmc 
 count_success_exact_tot = count_success_DD_exact + count_success_exact_third_step
@@ -488,10 +429,6 @@ if do_third_step and 'viterbi' in third_step_type:
 # Make resutls directory
 results_dir_path = None
 
-typical_label = '_nottypical'
-if code_type == 'typical_bernoulli':
-    typical_label = '_typical'
-
 third_step_label = third_step_type
 if not do_third_step:
     third_step_label = 'None'
@@ -519,10 +456,10 @@ if is_plot:
     plot_expected_unknown_avg(vecK, expected_unknown, count_PD1_avg - count_DD2_avg, vecT, 
                             enlarge_tests_num_by_factors, results_dir_path)
     plot_Psuccess_vs_T(vecTs, count_success_DD_exact, count_success_exact_tot, vecK, N, nmc, third_step_label, sample_method, 
-                        Tbaseline, enlarge_tests_num_by_factors, typical_label, delta_typical_cols,
+                        Tbaseline, enlarge_tests_num_by_factors,
                         results_dir_path, exact=True)
     plot_Psuccess_vs_T(vecTs, count_success_DD_non_exact, count_success_non_exact_tot, vecK, N, nmc, third_step_label, sample_method, 
-                        Tbaseline, enlarge_tests_num_by_factors, typical_label,delta_typical_cols,
+                        Tbaseline, enlarge_tests_num_by_factors,
                         results_dir_path, exact=False)
     
 #%% Save

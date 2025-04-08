@@ -1,0 +1,44 @@
+
+# General 
+Tbaseline: 'GE'
+save_raw: true
+save_fig: false
+is_plot: false
+is_sort_comb_by_priors: true
+add_dd_based_prior: false
+debug_mode: false
+plot_status_DD: false
+
+# Probabilistic model 
+sample_method: 'GE'
+N: 500
+vecK: [3]
+nmc: 10
+enlarge_tests_num_by_factors: [0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2]
+
+# Encoder
+code_type: 'near_constant' # options: 'bernoulli', 'near_constant'
+
+# Decoder 
+do_third_step: true
+third_step_type: 'viterbi+MAP' # options: ['MLE', 'MAP_for_GE', 'viterbi', 'viterbi+MAP']
+
+# Viterbi decoder 
+init_paths_number: 500
+max_paths_for_lva: 500
+step_in_lva_paths: 500
+viterbi_time_steps: 1
+max_iteration_for_map: 1000000
+gamma_dict:
+  '0.5': 12
+  '0.6': 6
+  '0.7': 6
+  '0.8': 6
+  '0.9': 6
+  '1.0': 6
+  '1.1': 6
+  '1.2': 6
+
+# Seed
+random_seed: 123
+numpy_seed: 123
