@@ -23,7 +23,7 @@ save_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'results')
 
 random.seed(random_seed)
 np.random.seed(numpy_seed)
-
+Tbaseline = 'ML'
 
 invalid = -1
 all_permutations = []
@@ -188,7 +188,7 @@ for idxK in range(numOfK):
             count_unknown2[idxK, idxT, nn] = len(unknown2)
 
             ## Define HMM
-            if is_plot and plot_status_DD:
+            if plot_res and plot_status_DD:
                 plot_status_before_third_step(N, K, T, enlarge_tests_num_by_factors[idxT], PD1, DD2, true_defective_set) 
 
             observations = 2*np.ones((N,)).astype(np.int8) # observations[PD1] = 2
@@ -445,7 +445,7 @@ if save_fig or save_raw:
     os.mkdir(results_dir_path)
 
 #%% Visualize
-if is_plot:
+if plot_res:
     plot_DD_vs_K_and_T(N, vecT, vecK, count_PD1_avg, enlarge_tests_num_by_factors, nmc, count_DD2_avg, sample_method, 
                         Tbaseline, code_type, results_dir_path)
     plot_expected_DD(vecK, expected_DD, count_DD2_avg, vecT, enlarge_tests_num_by_factors, results_dir_path)
