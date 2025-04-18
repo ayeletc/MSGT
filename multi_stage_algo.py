@@ -200,48 +200,33 @@ for idxK in range(numOfK):
                 continue
             estU = np.zeros(U.shape)
             if third_step_type == 'viterbi':
-                map_trajectory, map_probabilities = hmm_model.viterbi_algo_adjusted_to_GE(observations)
-                
-                map_trajectory = np.array(map_trajectory)
-                estU[0,map_trajectory == 1] = 1
-                # senity check - is DD2 in the most likely path?
-                if len(DD2) > 0 and len(list(set(DD2) - set(np.where(map_trajectory == 1)[0]))) != 0:
-                    print('{} DD2 not in path'.format(nn)) 
+                if sample_method == 'GE':
+                    hmm_model = ge_model.model_as_hmm_with_long_memory(K,T,len(PD1), p, ts=1)
+                elif sample_method == 'Markov':
+                    hmm_model = markov_model.model_as_hmm()
+                path_traj, path_prob, ml_prob, ml_traj = hmm_model.list_viterbi_algo_parallel_with_long_memory(observations, top_k=1)
+                path = np.copy(path_traj)
 
+                estU[0,path[0] == 1] = 1
+                
             elif third_step_type == 'viterbi+MAP':
                 possible_combination_found = False
                 skip_viterbi_paths_options = False
                 if debug_mode:
                     print('start lva')
-                # top_k = init_paths_number
-                # while not possible_combination_found and top_k <= max_paths_for_lva:
-                if viterbi_time_steps == 1:
-                    if sample_method == 'GE':
-                        hmm_model = ge_model.model_as_hmm(K, T, len(PD1), p, ver_states=False)
-                        path_trajs, path_probs, ml_prob, ml_traj = hmm_model.list_viterbi_algo_parallel_with_deter(observations, top_k=num_of_paths_for_lva)
-                    elif sample_method == 'Markov':
-                        # hmm_model_1step_memory = markov_model.model_as_hmm_with_1step_memory()
-                        hmm_model = markov_model.model_as_hmm_with_1step_memory()
-                        path_trajs, path_probs, ml_prob, ml_traj = hmm_model.list_viterbi_algo_parallel_with_deter(observations, top_k=num_of_paths_for_lva)
-                    else: 
-                        print('Not defined yet')# remove dup rows
-                    unique_rows = np.unique(path_trajs, axis=0)
-                    paths = unique_rows
-                    if debug_mode:
-                        print(paths.shape[0], ' unique paths')
-                else:
-                    if sample_method == 'GE':
-                        hmm_model = ge_model.model_as_hmm_with_long_memory(K,T,len(PD1), p, ts=viterbi_time_steps)
-                    elif sample_method == 'Markov':
-                        hmm_model = markov_model.model_as_hmm()
-                    path_trajs2, path_probs2, ml_prob2, ml_traj2 = hmm_model_2steps_2.list_viterbi_algo_parallel_with_long_memory(observations, top_k=num_of_paths_for_lva)
-                    paths = np.copy(path_trajs2)
-                    
-                    # remove dup rows
-                    unique_rows = np.unique(paths, axis=0)
-                    if debug_mode and unique_rows.shape[0] != paths.shape[0]:
-                        print('check')
-                    paths = unique_rows
+
+                if sample_method == 'GE':
+                    hmm_model = ge_model.model_as_hmm_with_long_memory(K,T,len(PD1), p, ts=1)
+                elif sample_method == 'Markov':
+                    hmm_model = markov_model.model_as_hmm()
+                path_trajs, path_probs, ml_prob, ml_traj = hmm_model.list_viterbi_algo_parallel_with_long_memory(observations, top_k=num_of_paths_for_lva)
+                paths = np.copy(path_trajs)
+                
+                # remove dup rows
+                unique_rows = np.unique(paths, axis=0)
+                if debug_mode and unique_rows.shape[0] != paths.shape[0]:
+                    print('check')
+                paths = unique_rows
                 
                 count_detections_for_non_exact_recovery = []
                 
@@ -447,7 +432,7 @@ if save_fig or save_raw:
 #%% Visualize
 if plot_res:
     plot_DD_vs_K_and_T(N, vecT, vecK, count_PD1_avg, enlarge_tests_num_by_factors, nmc, count_DD2_avg, sample_method, 
-                        Tbaseline, code_type, results_dir_path)
+                        Tbaseline, results_dir_path)    
     plot_expected_DD(vecK, expected_DD, count_DD2_avg, vecT, enlarge_tests_num_by_factors, results_dir_path)
     plot_expected_PD(vecK, expected_PD, count_PD1_avg, vecT, enlarge_tests_num_by_factors, results_dir_path)
     plot_expected_unknown(vecK, expected_unknown, count_unknown2_avg, vecT, enlarge_tests_num_by_factors, results_dir_path)
