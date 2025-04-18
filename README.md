@@ -16,6 +16,8 @@ The algorithm addresses the problem of non-adaptive group testing with general p
 
 ## Usage
 
+**Requirements:** Python 3.6 or higher
+
 Clone the repository and install the required dependencies:
 
 ```bash
