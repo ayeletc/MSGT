@@ -2,7 +2,6 @@
 save_raw: true
 save_fig: false
 plot_res: false
-is_sort_comb_by_priors: true
 add_dd_based_prior: false
 debug_mode: false
 plot_status_DD: false
@@ -11,7 +10,7 @@ plot_status_DD: false
 sample_method: 'Markov'
 N: 500 # population size
 vecK: [3] # number of defective items
-nmc: 5
+nmc: 2
 enlarge_tests_num_by_factors: [0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2] # The number of tests will be calculated based on the ML baseline multiplied by the scaling factors specified here.
 
 # Encoder
