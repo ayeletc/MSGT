@@ -427,7 +427,7 @@ if save_fig or save_raw:
     time_str = datetime.now().strftime("%d%m%Y_%H%M%S")
     experiment_str = 'N' + str(N) + '_K1_' + str(vecK[0]) + '_nmc' + str(nmc) + '_thirdStep_' + third_step_label + viterbi_label + '_' + code_type + '_Tbaseline_' +  Tbaseline + '_'
     results_dir_path = os.path.join(save_path, 'countPDandDD_' + experiment_str + time_str)
-    os.mkdir(results_dir_path)
+    os.makedirs(results_dir_path, exist_ok=True)
 
 #%% Visualize
 if plot_res:
