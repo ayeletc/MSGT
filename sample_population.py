@@ -2,7 +2,6 @@
 # from xmlrpc.client import boolean
 from locale import normalize
 from GE_model import GE_model
-from audioop import reverse
 import numpy as np
 import pandas as pd
 import random
