@@ -36,7 +36,7 @@ TRANS_MAT_N10000_K13 = np.array([
                             [0.15,  0.85],
                             [0.999, 0.001],
                             [0.9,   0.1]])
-class Markov_model:
+class Markov_model: 
     def __init__(self, memory_time_steps, init_prob, trans_mat):
         assert trans_mat.shape[0]==2**memory_time_steps, "Transition matrix does not match memory time steps"
         assert trans_mat.shape[1] == 2, "Transition matrix has more than 2 coloums"
@@ -45,6 +45,7 @@ class Markov_model:
         self.init_prob = init_prob
         self.trans_mat = trans_mat
         self.possible_states = ["{0:b}".format(st).zfill(self.memory_time_steps) for st in range(int(2**self.memory_time_steps))]
+        pass
     
     def sample_population(self, N, max_bad=np.inf, debug=False):
         iter = 0
@@ -65,7 +66,9 @@ class Markov_model:
         else:
             return U
     
- 
+
+    # def calculate_lower_bound_markov(self, N, Pe=0.0)
+    # def calc_Pw(self, permute, DD2, DND1)        
     def calc_Pw(self, N, permute, DD2, DND1):
         ts = self.memory_time_steps
         U = np.zeros((N,), np.uint8)
